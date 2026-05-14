@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HTC Health Hub — ระบบบันทึกสุขภาพออนไลน์</title>
     
-    <!-- Firebase SDK (v8) -->
+    <!-- Firebase SDK (v8) - เชื่อมต่อฐานข้อมูล Google Cloud -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     
-    <!-- Google Fonts & Icons -->
+    <!-- Google Fonts & Font Awesome Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
@@ -27,6 +27,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Kanit', sans-serif; background: var(--bg); color: #1e293b; overflow-x: hidden; }
 
+        /* Animation */
         .view { display: none; min-height: 100vh; animation: fadeIn 0.4s ease-out; }
         .view.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -59,28 +60,18 @@
         .nav-btn { 
             width: 100%; padding: 12px; background: rgba(255,255,255,0.05); color: #94a3b8; 
             border: none; border-radius: 10px; cursor: pointer; text-align: left; 
-            display: flex; align-items: center; gap: 12px; transition: 0.2s; margin-bottom: 10px;
+            display: flex; align-items: center; gap: 12px; transition: 0.2s;
         }
         .nav-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
         .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 40px; }
-        
-        /* Updated Filter Bar (Responsive Grid) */
-        .filter-section {
-            background: white; padding: 20px; border-radius: 20px; margin-bottom: 25px;
-            display: grid; grid-template-columns: 1.5fr 1fr 1fr 0.8fr 1fr; gap: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-        }
-        .filter-section select, .filter-section input {
-            padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0; font-family: 'Kanit'; font-size: 13px; outline: none;
-        }
-
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 35px; }
         .stat-card { background: white; padding: 25px; border-radius: 20px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
         .stat-card p { font-size: 13px; color: var(--secondary); margin-bottom: 5px; }
         .stat-card h2 { font-size: 32px; font-weight: 600; }
 
-        .table-wrap { background: white; border-radius: 20px; border: 1px solid #edf2f7; overflow-x: auto; box-shadow: 0 10px 15px rgba(0,0,0,0.03); }
-        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        .table-wrap { background: white; border-radius: 20px; border: 1px solid #edf2f7; overflow: hidden; box-shadow: 0 10px 15px rgba(0,0,0,0.03); }
+        table { width: 100%; border-collapse: collapse; }
         th { padding: 18px 25px; text-align: left; font-size: 13px; color: var(--secondary); background: #f8fafc; font-weight: 500; border-bottom: 1px solid #f1f5f9; }
         td { padding: 18px 25px; border-top: 1px solid #f1f5f9; font-size: 14px; }
         
@@ -91,23 +82,16 @@
         }
         .btn-del:hover { background: var(--danger); color: white; }
 
-        @media (max-width: 1100px) {
-            .filter-section { grid-template-columns: 1fr 1fr; }
-            .filter-section input:first-child { grid-column: span 2; }
-        }
-
         @media (max-width: 768px) {
             .sidebar { width: 70px; padding: 20px 10px; }
             .sidebar h3, .sidebar p, .nav-btn span { display: none; }
             .main-content { margin-left: 70px; padding: 20px; }
-            .filter-section { grid-template-columns: 1fr; }
-            .filter-section input:first-child { grid-column: span 1; }
         }
     </style>
 </head>
 <body>
 
-    <!-- [1] หน้าฟอร์มบันทึกข้อมูล -->
+    <!-- [1] หน้าฟอร์มบันทึกข้อมูล (สำหรับนักศึกษา) -->
     <div id="view-form" class="view active">
         <div class="form-card">
             <div style="text-align:center; margin-bottom:25px;">
@@ -126,6 +110,7 @@
                     <input type="text" id="fullname" placeholder="กรอกชื่อและนามสกุล" required>
                 </div>
 
+                <!-- เพิ่มแผนกวิชา -->
                 <div class="input-group">
                     <label>แผนกวิชา</label>
                     <select id="department" required>
@@ -140,7 +125,7 @@
                         <option value="ช่างสำรวจ">ช่างสำรวจ</option>
                         <option value="เทคนิคการผลิต">เทคนิคการผลิต</option>
                         <option value="เทคโนโลยีคอมพิวเตอร์">เทคโนโลยีคอมพิวเตอร์</option>
-                        <option value="เทคโนโลยีธุรกิจดิจิทัล">เทคโนโลยีธุรกิจดิจิทัล</option>
+                        <option value="เทคโนโลยีธุรกิจดิจิทัล">เทคโนโลยีธุรกิจดิจิทัล (คอมพิวเตอร์ธุรกิจ)</option>
                         <option value="การบัญชี">การบัญชี</option>
                         <option value="การตลาด">การตลาด</option>
                         <option value="เทคโนโลยีสารสนเทศ">เทคโนโลยีสารสนเทศ</option>
@@ -168,6 +153,9 @@
                             <option value="3">ห้อง 3</option>
                             <option value="4">ห้อง 4</option>
                             <option value="5">ห้อง 5</option>
+                            <option value="6">ห้อง 6</option>
+                            <option value="7">ห้อง 7</option>
+                            <option value="8">ห้อง 8</option>
                         </select>
                     </div>
                 </div>
@@ -196,15 +184,19 @@
         </div>
     </div>
 
-    <!-- [2] หน้า Admin Dashboard -->
+    <!-- [2] หน้า Admin Dashboard (Real-time) -->
     <div id="view-admin" class="view">
         <div class="admin-layout">
             <aside class="sidebar">
                 <h3>HTC ADMIN</h3>
-                <p style="font-size:11px; color:#64748b; margin-bottom:20px;">Health Tracker v2.0</p>
+                <p style="font-size:11px; color:#64748b; margin-bottom:20px;">Firebase Real-time Database</p>
+                
                 <div class="sidebar-nav">
-                    <button class="nav-btn" onclick="showPage('view-form')">
+                    <button class="nav-btn" onclick="showPage('view-form')" style="margin-bottom:10px;">
                         <i class="fas fa-arrow-left"></i> <span>กลับหน้าฟอร์ม</span>
+                    </button>
+                    <button class="nav-btn" style="color:#fb7185;">
+                        <i class="fas fa-power-off"></i> <span>ออกจากระบบ</span>
                     </button>
                 </div>
             </aside>
@@ -215,50 +207,18 @@
                 </header>
 
                 <div class="stats-grid">
-                    <div class="stat-card"><p>ทั้งหมด</p><h2 id="st-total">0</h2></div>
-                    <div class="stat-card"><p style="color:var(--success)">สุขภาพปกติ</p><h2 id="st-normal">0</h2></div>
-                    <div class="stat-card"><p style="color:var(--danger)">เสี่ยง/อ้วน</p><h2 id="st-risk">0</h2></div>
-                </div>
-
-                <!-- ระบบการกรองแบบละเอียด (Filters) -->
-                <div class="filter-section">
-                    <input type="text" id="filterSearch" placeholder="🔍 ชื่อ หรือ รหัส..." oninput="renderTable()">
-                    
-                    <select id="filterDept" onchange="renderTable()">
-                        <option value="">ทุกแผนกวิชา</option>
-                        <option value="ช่างยนต์">ช่างยนต์</option>
-                        <option value="ช่างกลโรงงาน">ช่างกลโรงงาน</option>
-                        <option value="ช่างไฟฟ้ากำลัง">ช่างไฟฟ้ากำลัง</option>
-                        <option value="ช่างอิเล็กทรอนิกส์">ช่างอิเล็กทรอนิกส์</option>
-                        <option value="เทคโนโลยีคอมพิวเตอร์">เทคโนโลยีคอมพิวเตอร์</option>
-                        <option value="การบัญชี">การบัญชี</option>
-                    </select>
-
-                    <select id="filterLevel" onchange="renderTable()">
-                        <option value="">ทุกระดับชั้น</option>
-                        <option value="ปวช. 1">ปวช. 1</option>
-                        <option value="ปวช. 2">ปวช. 2</option>
-                        <option value="ปวช. 3">ปวช. 3</option>
-                        <option value="ปวส. 1">ปวส. 1</option>
-                        <option value="ปวส. 2">ปวส. 2</option>
-                    </select>
-
-                    <select id="filterRoom" onchange="renderTable()">
-                        <option value="">ทุกห้อง</option>
-                        <option value="1">ห้อง 1</option>
-                        <option value="2">ห้อง 2</option>
-                        <option value="3">ห้อง 3</option>
-                        <option value="4">ห้อง 4</option>
-                        <option value="5">ห้อง 5</option>
-                    </select>
-
-                    <select id="filterStatus" onchange="renderTable()">
-                        <option value="">ทุกสถานะ BMI</option>
-                        <option value="ปกติ">ปกติ</option>
-                        <option value="ท้วม">ท้วม</option>
-                        <option value="อ้วน">อ้วน</option>
-                        <option value="น้ำหนักน้อย">น้ำหนักน้อย</option>
-                    </select>
+                    <div class="stat-card">
+                        <p>นักศึกษาทั้งหมด</p>
+                        <h2 id="st-total">0</h2>
+                    </div>
+                    <div class="stat-card">
+                        <p style="color:var(--success)">สุขภาพปกติ</p>
+                        <h2 id="st-normal">0</h2>
+                    </div>
+                    <div class="stat-card">
+                        <p style="color:var(--danger)">เสี่ยง/อ้วน</p>
+                        <h2 id="st-risk">0</h2>
+                    </div>
                 </div>
 
                 <div class="table-wrap">
@@ -273,7 +233,9 @@
                                 <th style="text-align:center;">จัดการ</th>
                             </tr>
                         </thead>
-                        <tbody id="realtimeTable"></tbody>
+                        <tbody id="realtimeTable">
+                            <!-- ข้อมูลจะเด้งมาโผล่ตรงนี้เองแบบ Real-time -->
+                        </tbody>
                     </table>
                 </div>
             </main>
@@ -281,7 +243,7 @@
     </div>
 
     <script>
-        // --- 1. FIREBASE CONFIG ---
+        // --- 1. การตั้งค่า FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyCiJAZhh9hzvvuWDwr4A6sj9m4XPvMyZrM",
             authDomain: "health-tracker-htc.firebaseapp.com",
@@ -289,115 +251,109 @@
             projectId: "health-tracker-htc",
             storageBucket: "health-tracker-htc.appspot.com",
             messagingSenderId: "58674059419",
-            appId: "1:58674059419:web:d0f038fbde0c691a2d49be"
+            appId: "1:58674059419:web:d0f038fbde0c691a2d49be",
+            measurementId: "G-S3BRLCTKM0"
         };
+
+        // เริ่มต้นการใช้งาน Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let allRecords = []; 
+        // เสียงแจ้งเตือนสั้นๆ เมื่อกดสำเร็จ
+        const playBeep = () => {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.connect(g); g.connect(ctx.destination);
+            osc.frequency.setValueAtTime(1000, ctx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+            osc.start(); osc.stop(ctx.currentTime + 0.3);
+        };
 
-        function getBMIStatus(bmi) {
-            const b = parseFloat(bmi);
-            if(b >= 30) return { text: "อ้วนมาก", color: "#ef4444" };
-            if(b >= 25) return { text: "อ้วน", color: "#f87171" };
-            if(b >= 23) return { text: "ท้วม", color: "#f59e0b" };
-            if(b >= 18.5) return { text: "ปกติ", color: "#10b981" };
-            return { text: "น้ำหนักน้อย", color: "#3b82f6" };
-        }
-
+        // --- 2. ฟังก์ชันจัดการหน้าจอ ---
         function showPage(id) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             document.getElementById(id).classList.add('active');
         }
 
+        // --- 3. การส่งข้อมูล (Student Form) ---
         document.getElementById('healthForm').onsubmit = (e) => {
             e.preventDefault();
+            
             const w = parseFloat(document.getElementById('weight').value);
             const h = parseFloat(document.getElementById('height').value) / 100;
             const bmi = (w / (h * h)).toFixed(1);
 
-            const data = {
+            const studentRecord = {
                 sid: document.getElementById('sid').value,
                 name: document.getElementById('fullname').value,
-                department: document.getElementById('department').value,
+                department: document.getElementById('department').value, // บันทึกแผนก
                 level: document.getElementById('level').value,
                 room: document.getElementById('room').value,
                 bmi: bmi,
                 timestamp: Date.now()
             };
 
-            db.ref('health_records').push(data).then(() => {
-                alert("บันทึกสำเร็จ!");
-                e.target.reset();
-            });
+            // ส่งข้อมูลขึ้น Firebase Realtime Database
+            db.ref('health_records').push(studentRecord)
+                .then(() => {
+                    playBeep();
+                    alert("บันทึกข้อมูลเรียลไทม์สำเร็จ!");
+                    e.target.reset();
+                })
+                .catch((err) => alert("เกิดข้อผิดพลาด: " + err.message));
         };
 
+        // --- 4. การดึงข้อมูลแบบ Real-time (Admin Dashboard) ---
         db.ref('health_records').on('value', (snapshot) => {
-            const data = snapshot.val();
-            allRecords = [];
-            if (data) {
-                Object.keys(data).forEach(key => {
-                    allRecords.push({ id: key, ...data[key] });
+            const items = snapshot.val();
+            const tbody = document.getElementById('realtimeTable');
+            tbody.innerHTML = ''; 
+            
+            let stats = { total: 0, normal: 0, risk: 0 };
+
+            if (items) {
+                const keys = Object.keys(items).reverse();
+                
+                keys.forEach(key => {
+                    const s = items[key];
+                    stats.total++;
+                    
+                    let status = "ปกติ", color = "#10b981";
+                    const b = parseFloat(s.bmi);
+                    
+                    if(b >= 25) { status = "อ้วน"; color = "#ef4444"; stats.risk++; }
+                    else if(b >= 23) { status = "ท้วม"; color = "#f59e0b"; stats.risk++; }
+                    else if(b < 18.5) { status = "น้ำหนักน้อย"; color = "#3b82f6"; stats.normal++; }
+                    else { stats.normal++; }
+
+                    // แสดงข้อมูลแผนกในตารางด้วย
+                    tbody.innerHTML += `
+                        <tr>
+                            <td style="font-family:'Space Mono'">${s.sid}</td>
+                            <td><b>${s.name}</b></td>
+                            <td>${s.department || '-'}<br><small style="color:gray">${s.level} / ${s.room}</small></td>
+                            <td style="font-family:'Space Mono'; font-weight:700">${s.bmi}</td>
+                            <td><span class="bmi-tag" style="background:${color}20; color:${color}">${status}</span></td>
+                            <td style="text-align:center;">
+                                <button class="btn-del" onclick="deleteEntry('${key}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>`;
                 });
             }
-            allRecords.sort((a, b) => b.timestamp - a.timestamp);
-            updateStats();
-            renderTable();
-        });
 
-        function updateStats() {
-            let stats = { total: allRecords.length, normal: 0, risk: 0 };
-            allRecords.forEach(r => {
-                if (parseFloat(r.bmi) >= 23) stats.risk++; 
-                else stats.normal++;
-            });
             document.getElementById('st-total').innerText = stats.total;
             document.getElementById('st-normal').innerText = stats.normal;
             document.getElementById('st-risk').innerText = stats.risk;
-        }
+        });
 
-        // --- ฟังก์ชันกรองข้อมูลแบบ Multi-Filter ---
-        function renderTable() {
-            const search = document.getElementById('filterSearch').value.toLowerCase();
-            const dept = document.getElementById('filterDept').value;
-            const level = document.getElementById('filterLevel').value;
-            const room = document.getElementById('filterRoom').value;
-            const status = document.getElementById('filterStatus').value;
-            const tbody = document.getElementById('realtimeTable');
-            
-            tbody.innerHTML = '';
-
-            const filteredData = allRecords.filter(r => {
-                const currentStatus = getBMIStatus(r.bmi).text;
-                
-                // ตรวจสอบเงื่อนไขการกรอง (ถ้าค่าว่างถือว่าผ่าน)
-                const matchSearch = r.name.toLowerCase().includes(search) || r.sid.includes(search);
-                const matchDept = dept === "" || r.department === dept;
-                const matchLevel = level === "" || r.level === level;
-                const matchRoom = room === "" || r.room === room;
-                const matchStatus = status === "" || currentStatus === status;
-
-                return matchSearch && matchDept && matchLevel && matchRoom && matchStatus;
-            });
-
-            filteredData.forEach(r => {
-                const statusInfo = getBMIStatus(r.bmi);
-                tbody.innerHTML += `
-                    <tr>
-                        <td style="font-family:'Space Mono'">${r.sid}</td>
-                        <td><b>${r.name}</b></td>
-                        <td>${r.department}<br><small style="color:gray">${r.level} / ห้อง ${r.room}</small></td>
-                        <td style="font-family:'Space Mono'; font-weight:700">${r.bmi}</td>
-                        <td><span class="bmi-tag" style="background:${statusInfo.color}20; color:${statusInfo.color}">${statusInfo.text}</span></td>
-                        <td style="text-align:center;">
-                            <button class="btn-del" onclick="deleteEntry('${r.id}')"><i class="fas fa-trash"></i></button>
-                        </td>
-                    </tr>`;
-            });
-        }
-
+        // ฟังก์ชันลบข้อมูล
         function deleteEntry(key) {
-            if(confirm('ลบข้อมูลนี้หรือไม่?')) db.ref('health_records/' + key).remove();
+            if(confirm('คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลนี้อย่างถาวร?')) {
+                db.ref('health_records/' + key).remove();
+            }
         }
     </script>
 </body>
