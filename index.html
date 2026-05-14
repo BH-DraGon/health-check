@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTC Health Hub — ระบบบันทึกสุขภาพ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #8B0000;
+            --primary-soft: #fff1f1;
+            --secondary: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --sidebar-width: 260px;
+            --bg: #f3f4f6;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Kanit', sans-serif; background: var(--bg); color: #1e293b; }
+
+        .view { display: none; min-height: 100vh; animation: fadeIn 0.3s ease; }
+        .view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Form Style */
+        #view-form { align-items: center; justify-content: center; background: radial-gradient(circle at top right, #fff5f5, #f3f4f6); padding: 20px; }
+        #view-form.active { display: flex; }
+        .form-card { background: rgba(255, 255, 255, 0.95); border-radius: 24px; padding: 40px; width: 100%; max-width: 480px; box-shadow: 0 20px 40px rgba(0,0,0,0.05); }
+        
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 13px; color: var(--secondary); margin-bottom: 5px; font-weight: 500; }
+        .input-group input, .input-group select { width: 100%; padding: 12px; border-radius: 12px; border: 1.5px solid #e2e8f0; outline: none; font-family: 'Kanit'; font-size: 14px; transition: 0.2s; }
+        .input-group input:focus, .input-group select:focus { border-color: var(--primary); }
+
+        .btn-submit { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: 500; transition: 0.3s; }
+        .btn-submit:hover { background: #600000; transform: translateY(-2px); }
+
+        /* Admin Layout */
+        .admin-layout { display: flex; min-height: 100vh; }
+        .sidebar { width: var(--sidebar-width); background: #1e293b; color: white; padding: 30px 20px; position: fixed; height: 100vh; }
+        .sidebar-brand { font-size: 22px; font-weight: 600; margin-bottom: 40px; display: flex; align-items: center; gap: 12px; }
+        .nav-item { padding: 14px 18px; border-radius: 12px; display: flex; align-items: center; gap: 12px; color: #94a3b8; text-decoration: none; margin-bottom: 8px; }
+        .nav-item.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(139,0,0,0.3); }
+
+        .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 40px; }
+
+        /* Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 20px; display: flex; align-items: center; gap: 15px; border: 1px solid #edf2f7; }
+        .stat-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+
+        /* Filter Section */
+        .data-header { background: white; padding: 25px; border-radius: 20px 20px 0 0; border: 1px solid #edf2f7; border-bottom: none; }
+        .filter-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
+        .filter-controls select { padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0; font-family: 'Kanit'; font-size: 13px; background: #fff; min-width: 130px; }
+
+        .table-wrap { background: white; border-radius: 0 0 20px 20px; border: 1px solid #edf2f7; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 950px; }
+        th { padding: 18px 25px; text-align: left; font-size: 13px; color: var(--secondary); background: #f8fafc; font-weight: 500; border-bottom: 1px solid #edf2f7; }
+        td { padding: 18px 25px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        
+        .bmi-tag { padding: 4px 10px; border-radius: 8px; font-weight: 600; font-family: 'Space Mono'; font-size: 12px; }
+        .btn-del { color: var(--danger); background: #fff1f2; border: none; width: 35px; height: 35px; border-radius: 10px; cursor: pointer; transition: 0.2s; }
+        .btn-del:hover { background: var(--danger); color: white; }
+
+        @media (max-width: 992px) {
+            .sidebar { width: 70px; padding: 30px 10px; }
+            .sidebar-brand span, .nav-item span { display: none; }
+            .main-content { margin-left: 70px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- [1] หน้าฟอร์มสำหรับนักศึกษา -->
+    <div id="view-form" class="view active">
+        <div class="form-card">
+            <div style="text-align:center; margin-bottom:30px;">
+                <i class="fas fa-heart-pulse" style="font-size:40px; color:var(--primary);"></i>
+                <h2 style="margin-top:10px;">HTC Health Hub</h2>
+                <p style="font-size:13px; color:var(--secondary);">ระบบบันทึกข้อมูลสุขภาพวิทยาลัยเทคนิค</p>
+            </div>
+            <form id="healthForm">
+                <div class="input-group">
+                    <label>รหัสนักศึกษา (11 หลัก)</label>
+                    <input type="text" id="sid" maxlength="11" placeholder="เช่น 66309010001" required>
+                </div>
+                <div class="input-group">
+                    <label>ชื่อ-นามสกุล</label>
+                    <input type="text" id="fullname" placeholder="ไม่ต้องใส่คำนำหน้า" required>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div class="input-group">
+                        <label>ระดับชั้น</label>
+                        <select id="level" required>
+                            <option value="">เลือก...</option>
+                            <option value="ปวช. 1">ปวช. 1</option><option value="ปวช. 2">ปวช. 2</option><option value="ปวช. 3">ปวช. 3</option>
+                            <option value="ปวส. 1">ปวส. 1</option><option value="ปวส. 2">ปวส. 2</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>ห้อง</label>
+                        <select id="room" required>
+                            <option value="">เลือก...</option>
+                            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                            <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+                            <option value="7">7</option><option value="8">8</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>แผนกวิชา (อ้างอิง image_a275fb.png)</label>
+                    <select id="dept" required>
+                        <option value="">-- เลือกแผนกวิชา --</option>
+                        <optgroup label="เครื่องกล">
+                            <option value="ช่างยนต์">ช่างยนต์</option>
+                            <option value="ช่างกลโรงงาน">ช่างกลโรงงาน</option>
+                            <option value="ช่างเชื่อมโลหะ">ช่างเชื่อมโลหะ</option>
+                        </optgroup>
+                        <optgroup label="ไฟฟ้าและอิเล็กทรอนิกส์">
+                            <option value="ช่างไฟฟ้ากำลัง">ช่างไฟฟ้ากำลัง</option>
+                            <option value="ช่างอิเล็กทรอนิกส์">ช่างอิเล็กทรอนิกส์</option>
+                            <option value="เทคโนโลยีโทรคมนาคม">เทคโนโลยีโทรคมนาคม</option>
+                        </optgroup>
+                        <optgroup label="เทคโนโลยีสารสนเทศ">
+                            <option value="เทคโนโลยีสารสนเทศ">เทคโนโลยีสารสนเทศ</option>
+                            <option value="คอมพิวเตอร์กราฟิก">คอมพิวเตอร์กราฟิก</option>
+                        </optgroup>
+                        <optgroup label="บริหารธุรกิจ">
+                            <option value="การบัญชี">การบัญชี</option>
+                            <option value="การตลาด">การตลาด</option>
+                            <option value="คอมพิวเตอร์ธุรกิจ">คอมพิวเตอร์ธุรกิจ</option>
+                            <option value="การจัดการโลจิสติกส์">การจัดการโลจิสติกส์</option>
+                        </optgroup>
+                        <optgroup label="อุตสาหกรรมอื่นๆ">
+                            <option value="ช่างก่อสร้าง">ช่างก่อสร้าง</option>
+                            <option value="สถาปัตยกรรม">สถาปัตยกรรม</option>
+                            <option value="คหกรรม">คหกรรม</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div class="input-group"><label>น้ำหนัก (kg)</label><input type="number" id="weight" step="0.1" required></div>
+                    <div class="input-group"><label>ส่วนสูง (cm)</label><input type="number" id="height" step="0.1" required></div>
+                </div>
+                <button type="submit" class="btn-submit">ส่งข้อมูลสุขภาพ</button>
+            </form>
+            <div style="text-align:center; margin-top:20px;">
+                <a href="#" onclick="showPage('view-login')" style="color:var(--secondary); font-size:12px; text-decoration:none;">แอดมินเข้าสู่ระบบ</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- [2] หน้า Login -->
+    <div id="view-login" class="view">
+        <div style="height:100vh; display:flex; align-items:center; justify-content:center;">
+            <div class="form-card" style="max-width:350px; text-align:center;">
+                <h3 style="margin-bottom:20px;">Admin Access</h3>
+                <form id="loginForm">
+                    <div class="input-group">
+                        <input type="text" id="user" placeholder="Username" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="pass" placeholder="Password" required>
+                    </div>
+                    <button type="submit" class="btn-submit">Login</button>
+                </form>
+                <button onclick="showPage('view-form')" style="background:none; border:none; color:var(--secondary); margin-top:15px; cursor:pointer; font-family:'Kanit';">ยกเลิก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- [3] หน้า Admin Dashboard -->
+    <div id="view-admin" class="view">
+        <div class="admin-layout">
+            <aside class="sidebar">
+                <div class="sidebar-brand"><i class="fas fa-heart-pulse"></i> <span>HTC ADMIN</span></div>
+                <nav>
+                    <a href="#" class="nav-item active"><i class="fas fa-chart-line"></i> <span>Dashboard</span></a>
+                    <a href="#" onclick="logout()" class="nav-item" style="margin-top:20px; color:#fb7185;"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
+                </nav>
+            </aside>
+
+            <main class="main-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:var(--primary-soft); color:var(--primary);"><i class="fas fa-users"></i></div>
+                        <div class="stat-info"><h4>ทั้งหมด</h4> <span id="st-total">0</span> คน</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:#ecfdf5; color:var(--success);"><i class="fas fa-smile"></i></div>
+                        <div class="stat-info"><h4>น้ำหนักปกติ</h4> <span id="st-normal">0</span> คน</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:#fffbeb; color:var(--warning);"><i class="fas fa-weight-scale"></i></div>
+                        <div class="stat-info"><h4>ท้วม/อ้วน</h4> <span id="st-risk">0</span> คน</div>
+                    </div>
+                </div>
+
+                <div class="data-header">
+                    <h2 style="font-size: 18px; font-weight: 600;">ข้อมูลนักศึกษาล่าสุด</h2>
+                    <div class="filter-controls">
+                        <select id="fLevel" onchange="renderTable()">
+                            <option value="all">ทุกระดับชั้น</option>
+                            <option value="ปวช. 1">ปวช. 1</option><option value="ปวช. 2">ปวช. 2</option><option value="ปวช. 3">ปวช. 3</option>
+                            <option value="ปวส. 1">ปวส. 1</option><option value="ปวส. 2">ปวส. 2</option>
+                        </select>
+                        <!-- Filter ห้อง เพิ่มเป็น 8 ห้อง -->
+                        <select id="fRoom" onchange="renderTable()">
+                            <option value="all">ทุกห้อง</option>
+                            <option value="1">ห้อง 1</option><option value="2">ห้อง 2</option><option value="3">ห้อง 3</option>
+                            <option value="4">ห้อง 4</option><option value="5">ห้อง 5</option><option value="6">ห้อง 6</option>
+                            <option value="7">ห้อง 7</option><option value="8">ห้อง 8</option>
+                        </select>
+                        <select id="fDept" onchange="renderTable()">
+                            <option value="all">ทุกแผนกวิชา</option>
+                            <option value="ช่างยนต์">ช่างยนต์</option>
+                            <option value="ช่างกลโรงงาน">ช่างกลโรงงาน</option>
+                            <option value="ช่างเชื่อมโลหะ">ช่างเชื่อมโลหะ</option>
+                            <option value="ช่างไฟฟ้ากำลัง">ช่างไฟฟ้ากำลัง</option>
+                            <option value="ช่างอิเล็กทรอนิกส์">ช่างอิเล็กทรอนิกส์</option>
+                            <option value="เทคโนโลยีโทรคมนาคม">เทคโนโลยีโทรคมนาคม</option>
+                            <option value="เทคโนโลยีสารสนเทศ">เทคโนโลยีสารสนเทศ</option>
+                            <option value="คอมพิวเตอร์กราฟิก">คอมพิวเตอร์กราฟิก</option>
+                            <option value="การบัญชี">การบัญชี</option>
+                            <option value="การตลาด">การตลาด</option>
+                            <option value="คอมพิวเตอร์ธุรกิจ">คอมพิวเตอร์ธุรกิจ</option>
+                            <option value="การจัดการโลจิสติกส์">การจัดการโลจิสติกส์</option>
+                            <option value="ช่างก่อสร้าง">ช่างก่อสร้าง</option>
+                            <option value="สถาปัตยกรรม">สถาปัตยกรรม</option>
+                            <option value="คหกรรม">คหกรรม</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>รหัสนักศึกษา</th>
+                                <th>ชื่อ-นามสกุล</th>
+                                <th>ระดับชั้น/ห้อง</th>
+                                <th>แผนกวิชา</th>
+                                <th>BMI</th>
+                                <th>สถานะ</th>
+                                <th>จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminTableBody"></tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        function showPage(id) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if(id === 'view-admin') {
+                if(sessionStorage.getItem('isAdmin') !== 'true') showPage('view-login');
+                else renderTable();
+            }
+        }
+
+        document.getElementById('loginForm').onsubmit = (e) => {
+            e.preventDefault();
+            if(document.getElementById('user').value==='admin' && document.getElementById('pass').value==='1234') {
+                sessionStorage.setItem('isAdmin', 'true');
+                showPage('view-admin');
+            } else alert('รหัสผ่านไม่ถูกต้อง');
+        };
+
+        function logout() { sessionStorage.removeItem('isAdmin'); showPage('view-form'); }
+
+        document.getElementById('healthForm').onsubmit = (e) => {
+            e.preventDefault();
+            const w = parseFloat(document.getElementById('weight').value);
+            const h = parseFloat(document.getElementById('height').value) / 100;
+            const bmiValue = (w / (h * h)).toFixed(1);
+            
+            const student = {
+                id: Date.now(),
+                sid: document.getElementById('sid').value,
+                name: document.getElementById('fullname').value,
+                level: document.getElementById('level').value,
+                room: document.getElementById('room').value,
+                dept: document.getElementById('dept').value,
+                bmi: bmiValue
+            };
+
+            let db = JSON.parse(localStorage.getItem('htc_db')) || [];
+            db.push(student);
+            localStorage.setItem('htc_db', JSON.stringify(db));
+            alert('บันทึกข้อมูลเรียบร้อยแล้ว!');
+            e.target.reset();
+        };
+
+        function renderTable() {
+            const db = JSON.parse(localStorage.getItem('htc_db')) || [];
+            const tbody = document.getElementById('adminTableBody');
+            
+            const selL = document.getElementById('fLevel').value;
+            const selR = document.getElementById('fRoom').value;
+            const selD = document.getElementById('fDept').value;
+            
+            tbody.innerHTML = '';
+            let cTotal = 0, cNormal = 0, cRisk = 0;
+
+            const filtered = db.filter(s => {
+                return (selL === 'all' || s.level === selL) &&
+                       (selR === 'all' || s.room === selR) &&
+                       (selD === 'all' || s.dept === selD);
+            });
+
+            filtered.forEach(s => {
+                cTotal++;
+                let status = "ปกติ", color = "#10b981";
+                const b = parseFloat(s.bmi);
+                if(b >= 23 && b < 25) { status = "ท้วม"; color = "#f59e0b"; cRisk++; }
+                else if(b >= 25) { status = "อ้วน"; color = "#ef4444"; cRisk++; }
+                else if(b < 18.5) { status = "น้ำหนักน้อย"; color = "#3b82f6"; cNormal++; }
+                else { cNormal++; }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-family:'Space Mono'">${s.sid}</td>
+                        <td><b>${s.name}</b></td>
+                        <td>${s.level} / ห้อง ${s.room}</td>
+                        <td>${s.dept}</td>
+                        <td style="font-family:'Space Mono'; font-weight:700;">${s.bmi}</td>
+                        <td><span class="bmi-tag" style="background:${color}20; color:${color}">${status}</span></td>
+                        <td><button class="btn-del" onclick="deleteData(${s.id})"><i class="fas fa-trash"></i></button></td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('st-total').innerText = cTotal;
+            document.getElementById('st-normal').innerText = cNormal;
+            document.getElementById('st-risk').innerText = cRisk;
+        }
+
+        function deleteData(id) {
+            if(confirm('ต้องการลบข้อมูลนี้ออกจากระบบ?')) {
+                let db = JSON.parse(localStorage.getItem('htc_db')) || [];
+                localStorage.setItem('htc_db', JSON.stringify(db.filter(s => s.id !== id)));
+                renderTable();
+            }
+        }
+    </script>
+</body>
+</html>
