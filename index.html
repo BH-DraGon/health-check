@@ -35,9 +35,9 @@
         /* Student Form Layout */
         #view-form { align-items: center; justify-content: center; background: radial-gradient(circle at top right, #fff5f5, #f3f4f6); padding: 20px; }
         #view-form.active { display: flex; }
-        .form-card { background: white; border-radius: 24px; padding: 35px; width: 100%; max-width: 500px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); border: 1px solid #fff; }
+        .form-card { background: white; border-radius: 24px; padding: 40px; width: 100%; max-width: 480px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); border: 1px solid #fff; }
         
-        .input-group { margin-bottom: 15px; }
+        .input-group { margin-bottom: 18px; }
         .input-group label { display: block; font-size: 13px; color: var(--secondary); margin-bottom: 6px; font-weight: 500; }
         .input-group input, .input-group select { 
             width: 100%; padding: 12px 15px; border-radius: 12px; border: 1.5px solid #e2e8f0; 
@@ -94,7 +94,7 @@
     <!-- [1] หน้าฟอร์มบันทึกข้อมูล (สำหรับนักศึกษา) -->
     <div id="view-form" class="view active">
         <div class="form-card">
-            <div style="text-align:center; margin-bottom:25px;">
+            <div style="text-align:center; margin-bottom:30px;">
                 <i class="fas fa-heart-pulse" style="font-size:45px; color:var(--primary);"></i>
                 <h2 style="margin-top:12px;">HTC Health Hub</h2>
                 <p style="font-size:13px; color:var(--secondary); margin-top:5px;">วิทยาลัยเทคนิคหาดใหญ่</p>
@@ -108,28 +108,6 @@
                 <div class="input-group">
                     <label>ชื่อ-นามสกุล</label>
                     <input type="text" id="fullname" placeholder="กรอกชื่อและนามสกุล" required>
-                </div>
-
-                <!-- เพิ่มแผนกวิชา -->
-                <div class="input-group">
-                    <label>แผนกวิชา</label>
-                    <select id="department" required>
-                        <option value="">เลือกแผนกวิชา...</option>
-                        <option value="ช่างยนต์">ช่างยนต์</option>
-                        <option value="ช่างกลโรงงาน">ช่างกลโรงงาน</option>
-                        <option value="ช่างเชื่อมโลหะ">ช่างเชื่อมโลหะ</option>
-                        <option value="ช่างไฟฟ้ากำลัง">ช่างไฟฟ้ากำลัง</option>
-                        <option value="ช่างอิเล็กทรอนิกส์">ช่างอิเล็กทรอนิกส์</option>
-                        <option value="ช่างก่อสร้าง">ช่างก่อสร้าง</option>
-                        <option value="สถาปัตยกรรม">สถาปัตยกรรม</option>
-                        <option value="ช่างสำรวจ">ช่างสำรวจ</option>
-                        <option value="เทคนิคการผลิต">เทคนิคการผลิต</option>
-                        <option value="เทคโนโลยีคอมพิวเตอร์">เทคโนโลยีคอมพิวเตอร์</option>
-                        <option value="เทคโนโลยีธุรกิจดิจิทัล">เทคโนโลยีธุรกิจดิจิทัล (คอมพิวเตอร์ธุรกิจ)</option>
-                        <option value="การบัญชี">การบัญชี</option>
-                        <option value="การตลาด">การตลาด</option>
-                        <option value="เทคโนโลยีสารสนเทศ">เทคโนโลยีสารสนเทศ</option>
-                    </select>
                 </div>
                 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
@@ -227,7 +205,7 @@
                             <tr>
                                 <th>รหัส</th>
                                 <th>ชื่อ-นามสกุล</th>
-                                <th>แผนก/ระดับ/ห้อง</th>
+                                <th>ระดับ/ห้อง</th>
                                 <th>BMI</th>
                                 <th>สถานะ</th>
                                 <th style="text-align:center;">จัดการ</th>
@@ -243,7 +221,7 @@
     </div>
 
     <script>
-        // --- 1. การตั้งค่า FIREBASE ---
+        // --- 1. การตั้งค่า FIREBASE (จากภาพ image_a114bc.png) ---
         const firebaseConfig = {
             apiKey: "AIzaSyCiJAZhh9hzvvuWDwr4A6sj9m4XPvMyZrM",
             authDomain: "health-tracker-htc.firebaseapp.com",
@@ -287,7 +265,6 @@
             const studentRecord = {
                 sid: document.getElementById('sid').value,
                 name: document.getElementById('fullname').value,
-                department: document.getElementById('department').value, // บันทึกแผนก
                 level: document.getElementById('level').value,
                 room: document.getElementById('room').value,
                 bmi: bmi,
@@ -305,14 +282,16 @@
         };
 
         // --- 4. การดึงข้อมูลแบบ Real-time (Admin Dashboard) ---
+        // ฟังก์ชันนี้จะทำงานทุกครั้งที่มีคนกดบันทึกข้อมูลใหม่จากที่ไหนก็ได้!
         db.ref('health_records').on('value', (snapshot) => {
             const items = snapshot.val();
             const tbody = document.getElementById('realtimeTable');
-            tbody.innerHTML = ''; 
+            tbody.innerHTML = ''; // ล้างตารางเก่าก่อนวาดใหม่
             
             let stats = { total: 0, normal: 0, risk: 0 };
 
             if (items) {
+                // แปลง Object เป็น Array และเรียงลำดับล่าสุดขึ้นก่อน
                 const keys = Object.keys(items).reverse();
                 
                 keys.forEach(key => {
@@ -327,12 +306,11 @@
                     else if(b < 18.5) { status = "น้ำหนักน้อย"; color = "#3b82f6"; stats.normal++; }
                     else { stats.normal++; }
 
-                    // แสดงข้อมูลแผนกในตารางด้วย
                     tbody.innerHTML += `
                         <tr>
                             <td style="font-family:'Space Mono'">${s.sid}</td>
                             <td><b>${s.name}</b></td>
-                            <td>${s.department || '-'}<br><small style="color:gray">${s.level} / ${s.room}</small></td>
+                            <td>${s.level} / ${s.room}</td>
                             <td style="font-family:'Space Mono'; font-weight:700">${s.bmi}</td>
                             <td><span class="bmi-tag" style="background:${color}20; color:${color}">${status}</span></td>
                             <td style="text-align:center;">
@@ -344,6 +322,7 @@
                 });
             }
 
+            // อัปเดตตัวเลขสถิติบนการ์ด
             document.getElementById('st-total').innerText = stats.total;
             document.getElementById('st-normal').innerText = stats.normal;
             document.getElementById('st-risk').innerText = stats.risk;
